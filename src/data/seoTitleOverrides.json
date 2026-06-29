@@ -1,0 +1,43 @@
+{
+  "_comment": "CTR-optimized title/description overrides for the highest-impression GSC pages. 'title' (when present) is used verbatim as the final <title> (no '| ClaritX' suffix appended) and is kept <=60 chars; it leads with the EXACT query the page wins impressions for. 'description' is pure CTR (answer-first + the 9-perspective-AI/free differentiator + 2026 freshness), <=158 chars, zero ranking risk. Applied at build time (generate-spa-fallbacks.js) AND client-side (BlogPost.tsx) so the static snippet and the rendered page match. Add a slug here only after checking its winning query in GSC.",
+  "10-best-dividend-stocks-under-50-safe-beginners": {
+    "title": "Best Dividend Stocks for Beginners: 10 Picks Under $50",
+    "description": "The 10 best dividend stocks for beginners in 2026 — all under $50 and ranked by our 9-perspective AI. See yields, payout safety, and the full free report."
+  },
+  "buffett-indicator-flashes-red-2026-market-valuations": {
+    "title": "Buffett Indicator 2026: Current Level & What It Means",
+    "description": "See the Buffett Indicator's current 2026 level, how it compares to history, and what record market-cap-to-GDP valuations mean for your portfolio."
+  },
+  "warren-buffetts-favorite-safe-stocks-beginners": {
+    "title": "Warren Buffett Stock Picks for Beginners: 7 Safe Buys",
+    "description": "Warren Buffett's approach for beginners: 7 safe, wide-moat stocks with durable income — each analyzed across 9 perspectives by ClaritX's free AI."
+  },
+  "defensive-stocks-low-volatility-picks": {
+    "title": "Best Defensive Stocks 2026: 8 Low-Volatility Picks",
+    "description": "The best defensive, low-volatility stocks for 2026 — low-beta picks that cushion drawdowns, ranked by ClaritX's 9-perspective AI. Free analysis."
+  },
+  "sp-500-vs-individual-stocks-beginners-guide": {
+    "description": "S&P 500 vs individual stocks: which is safer for beginners in 2026? Compare risk, returns, and dividends — with a free AI verdict on any stock."
+  },
+  "june-2026-jobs-report-nfp-portfolio-impact": {
+    "description": "How the June 2026 jobs report — nonfarm payrolls and 4.3% unemployment — moves rates and markets, plus 3 portfolio takeaways for retail investors."
+  },
+  "are-blue-chip-stocks-safe-beginners-guide": {
+    "description": "Are blue chip stocks safe for beginners in 2026? See the real risks, top picks, and dividend yields — with a free 9-perspective AI analysis."
+  },
+  "10-best-stocks-for-beginners-with-small-budgets": {
+    "description": "The 10 best stocks for beginners with a small budget (under $100/share) in 2026 — quality companies with stable dividends, AI-ranked and free."
+  },
+  "best-etfs-to-buy-and-hold-forever": {
+    "description": "The best ETFs to buy and hold forever in 2026 — low-cost index and total-market funds for set-and-forget investors. Free AI analysis on each."
+  },
+  "tech-sell-off-may-jobs-report-ai-stocks-impact": {
+    "description": "Why a strong May 2026 jobs report triggered a tech sell-off and hit AI stocks — what it means for Fed rate cuts and your portfolio."
+  },
+  "ai-capex-costs-hidden-impact-retail-investors": {
+    "description": "How massive AI capital spending is quietly eroding Big Tech free cash flow in 2026 — the hidden cost of the AI boom and how to protect your portfolio."
+  },
+  "sell-in-may-and-go-away-2026-strategy": {
+    "description": "Does 'Sell in May and Go Away' work in 2026? Why AI capex, Fed policy, and S&P 500 data suggest staying invested — with a free AI market read."
+  }
+}

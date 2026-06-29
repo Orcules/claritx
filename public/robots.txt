@@ -1,0 +1,79 @@
+# ClaritX - AI-Powered Stock Market Research Platform
+# https://www.claritx.ai
+
+# Default rule for all crawlers
+# (no Crawl-delay — the site needs ~600 pages recrawled quickly after the
+# canonical fix; Google ignores it anyway and it slows Bing/others)
+User-agent: *
+Allow: /
+
+# Disallow admin/internal pages
+Disallow: /ranking-dashboard
+Disallow: /activity-logs
+Disallow: /dashboard
+Disallow: /user-dashboard
+Disallow: /risk-assessment
+Disallow: /my-portfolio
+Disallow: /portfolio-analysis
+
+# Block transient UI state params only (not content pages)
+Disallow: /*?success=*
+Disallow: /*?canceled=*
+Disallow: /*?return=*
+Disallow: /*?redirect=*
+
+# AI/LLM Crawlers - Allow for citations and discovery
+User-agent: GPTBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: ChatGPT-User
+Allow: /
+Crawl-delay: 1
+
+User-agent: PerplexityBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Claude-Web
+Allow: /
+Crawl-delay: 1
+
+User-agent: anthropic-ai
+Allow: /
+Crawl-delay: 1
+
+User-agent: Amazonbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Google-Extended
+Allow: /
+
+User-agent: OAI-SearchBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: ClaudeBot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Bingbot
+Allow: /
+Crawl-delay: 1
+
+User-agent: Googlebot
+Allow: /
+
+User-agent: Googlebot-Image
+Allow: /
+
+User-agent: Googlebot-Video
+Allow: /
+
+User-agent: Applebot-Extended
+Allow: /
+Crawl-delay: 1
+
+# Sitemap index — sub-sitemaps for static pages, blogs, and stock pages
+Sitemap: https://www.claritx.ai/sitemap.xml

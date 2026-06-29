@@ -1,0 +1,34 @@
+version: 1
+frontend:
+  phases:
+    preBuild:
+      commands:
+        - yum install -y alsa-lib atk at-spi2-atk cups-libs gtk3 libXcomposite libXcursor libXdamage libXext libXi libXrandr libXScrnSaver libXtst pango nss mesa-libgbm 2>/dev/null || true
+        - npm ci --legacy-peer-deps
+        # Chrome for the prerender step — cached inside node_modules so it survives builds.
+        # timeout guards against a hung download eating the whole build window.
+        - export PUPPETEER_CACHE_DIR=$PWD/node_modules/.cache/puppeteer && timeout 300 npx puppeteer browsers install chrome || echo "Chrome install failed/timed out — prerender will be skipped (SEO fallbacks still ship correct heads)"
+    build:
+      commands:
+        - npm run build
+    postBuild:
+      commands:
+        # Step 1: Per-route SEO fallbacks — unique title/canonical/meta per page,
+        # full article content + JSON-LD for blog posts. This is the SEO baseline;
+        # a plain index.html copy must never ship (homepage canonical deindexes pages).
+        # First try with full content; on failure/timeout retry meta-only (fast, no per-post fetches).
+        - timeout 600 node scripts/generate-spa-fallbacks.js || SKIP_BLOG_CONTENT=1 timeout 180 node scripts/generate-spa-fallbacks.js
+        # Step 2: Sitemaps from live API data (redirected slugs excluded, stocks capped)
+        - timeout 120 node scripts/generate-sitemap.js || echo "Sitemap generation failed — shipping without fresh sitemaps"
+        # Step 3: Best-effort full prerender of static routes (overwrites fallbacks)
+        - export PUPPETEER_CACHE_DIR=$PWD/node_modules/.cache/puppeteer && timeout 600 node scripts/build-with-prerender.js --prerender-only || echo "Prerender warning — SEO fallbacks still active (heads are correct)"
+        # Step 4: Hard gate — fail the build if any sampled page still carries the
+        # homepage title/canonical (the bug that caused GSC mass-deindexing)
+        - node scripts/verify-seo-dist.js
+  artifacts:
+    baseDirectory: dist
+    files:
+      - '**/*'
+  cache:
+    paths:
+      - node_modules/**/*

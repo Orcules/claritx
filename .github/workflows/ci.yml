@@ -1,0 +1,40 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  python:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install pytest fastapi sqlalchemy httpx "python-jose[cryptography]"
+      - name: Compile check
+        run: python -m compileall backend
+      - name: Run tests
+        run: pytest backend/tests -v
+
+  node:
+    runs-on: ubuntu-latest
+    env:
+      PUPPETEER_SKIP_DOWNLOAD: "true"
+      VITE_AWS_API_URL: "https://api.example.com/prod"
+      VITE_COGNITO_USER_POOL_ID: "us-east-1_PLACEHOLDER"
+      VITE_COGNITO_CLIENT_ID: "placeholder-client-id"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Build
+        run: npm run build

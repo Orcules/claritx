@@ -1,0 +1,48 @@
+# ClaritX
+
+> Free AI-powered stock analysis from 9 research perspectives. For educational purposes only — not investment advice.
+
+ClaritX analyzes stocks, ETFs, funds, and cryptocurrencies from 9 dimensions: news sentiment, technical indicators, social media buzz, financial fundamentals, analyst ratings, peer comparison, insider activity, dividend health, and AI synthesis verdict. All analysis is for educational research purposes only.
+
+## Key Facts
+
+- **Free to use**: Core analysis tools require no subscription
+- **9 research perspectives**: Each stock analyzed from news, technicals, social buzz, fundamentals, analyst ratings, peer comparison, insider activity, dividends, and AI synthesis
+- **Coverage**: Stocks, ETFs, mutual funds, and cryptocurrencies listed on US exchanges
+- **No financial advice**: Platform is strictly educational — not a broker, advisor, or recommendation service
+- **AI-powered**: Uses large language models and real-time market data to generate research reports
+- **Market Opportunities**: Daily AI scan of news catalysts surfaces stocks with real upcoming drivers
+- **Portfolio Simulator**: Risk-profile-based portfolio builder — simulated, not a real brokerage account
+- **Data sourcing**: Technical and fundamental data sourced from institutional-grade financial market data providers; coverage includes all US-listed equities, ETFs, and major cryptocurrencies
+
+## Core Tools
+
+- [AI Stock Analysis](https://www.claritx.ai/ai-stock-analysis): Analyze any stock with 9-perspective AI research including news, technicals, fundamentals, and more
+- [AI Stock Rank](https://www.claritx.ai/ai-stock-rank): AI-generated quality rankings for 1,000+ stocks, ETFs, and funds
+- [Portfolio Simulator](https://www.claritx.ai/portfolio-simulator): Build simulated portfolios based on your risk profile and investment preferences
+- [Market Opportunities](https://www.claritx.ai/market-opportunities): News-driven market catalyst scanner for real-time opportunities
+- [Browse Stocks](https://www.claritx.ai/stocks): Directory of individual stock analysis pages
+
+## Learn
+
+- [AI Stock Analysis Guide](https://www.claritx.ai/ai-stock-analysis-guide): Complete guide to 9-perspective AI stock research methodology
+- [Investment Research Blog](https://www.claritx.ai/blog): Educational articles on investing, stock analysis, and portfolio building
+- [Pricing](https://www.claritx.ai/pricing): Free and Pro plan details
+
+## About
+
+- [About ClaritX](https://www.claritx.ai/about): Mission, methodology, data sources, and editorial standards
+
+ClaritX is a free AI-powered market research platform designed to help individual investors understand stocks from multiple angles before making their own informed decisions. The platform is not a financial advisor and does not provide personalized investment recommendations.
+
+Contact: https://www.claritx.ai
+Twitter/X: https://x.com/Clarit_X
+LinkedIn: https://www.linkedin.com/company/claritx-ai
+YouTube: https://www.youtube.com/@ClaritX-ai
+License: RSL 1.0
+
+## Optional
+
+- [Disclaimer](https://www.claritx.ai/disclaimer): ClaritX is for educational purposes only, not investment advice. Always consult a financial professional.
+- [Privacy Policy](https://www.claritx.ai/privacy): How ClaritX handles user data
+- [Terms of Service](https://www.claritx.ai/terms): Terms governing use of the platform
