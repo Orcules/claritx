@@ -1,0 +1,26 @@
+{
+  "name": "ClaritX - AI Stock Analysis",
+  "short_name": "ClaritX",
+  "description": "Free AI-powered stock analysis from 9 research perspectives. Educational research tool only.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0e14",
+  "theme_color": "#10b981",
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/favicon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "business"],
+  "lang": "en-US",
+  "dir": "ltr"
+}

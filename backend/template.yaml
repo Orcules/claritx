@@ -1,0 +1,504 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  ClaritX API
+  
+  Serverless FastAPI backend for Stock Analysis.
+
+Globals:
+  Function:
+    Timeout: 30  # API Gateway limit
+    MemorySize: 256
+    Runtime: python3.13
+    Architectures:
+      - x86_64
+    VpcConfig:
+      SubnetIds:
+        - subnet-REPLACE_WITH_YOUR_SUBNET_1
+        - subnet-REPLACE_WITH_YOUR_SUBNET_2
+      SecurityGroupIds:
+        - sg-REPLACE_WITH_YOUR_SG
+
+Resources:
+  # The API Gateway
+  ClaritXApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: prod
+      Cors:
+        AllowMethods: "'*'"
+        AllowHeaders: "'*'"
+        AllowOrigin: "'*'"
+      BinaryMediaTypes:
+        - "image/jpeg"
+        - "image/png"
+        - "image/webp"
+        - "application/octet-stream"
+
+  # The Lambda Function inside a VPC (Optional, strictly needed only if RDS is private)
+  # For now, we will assume public access or non-VPC for simplicity unless requested.
+  StockAnalysisFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: main.handler  # Points to 'handler = Mangum(app)' in main.py
+      Events:
+        ApiEvent:
+          Type: Api
+          Properties:
+            Path: /{proxy+}
+            Method: any
+            RestApiId: !Ref ClaritXApi
+      ReservedConcurrentExecutions: 30 # Guarantee API responsiveness
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          FMP_API_KEY: !Ref FmpApiKey
+          XAI_API_KEY: !Ref XaiApiKey
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          KIE_AI: !Ref KieAiApiKey
+          BATCH_PROVIDER: !Ref BatchProvider
+          GOOGLE_CLOUD_PROJECT: !Ref GoogleCloudProject
+          COGNITO_USER_POOL_ID: !Ref ClaritXUserPool
+          COGNITO_CLIENT_ID: !Ref ClaritXUserPoolClient
+          SQS_QUEUE_URL: !Ref StockAnalysisQueue
+          BATCH_QUEUE_URL: !Ref BatchAnalysisQueue
+          SQS_BACKGROUND_QUEUE_URL: !Ref BackgroundTasksQueue
+          GCS_BUCKET_NAME: !Ref GcsBucketName
+          STRIPE_SECRET_KEY: !Ref StripeSecretKey
+          STRIPE_WEBHOOK_SECRET: !Ref StripeWebhookSecret
+          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSid
+          TWILIO_AUTH_TOKEN: !Ref TwilioAuthToken
+          TWILIO_WHATSAPP_FROM: !Ref TwilioWhatsappFrom
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - AmazonBedrockFullAccess
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt StockAnalysisQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BatchAnalysisQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BackgroundTasksQueue.QueueName
+
+  # SQS Queue for standard UI-initiated analysis
+  StockAnalysisQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: stock-analysis-queue
+      VisibilityTimeout: 180
+      MessageRetentionPeriod: 7200
+      ReceiveMessageWaitTimeSeconds: 20
+
+  # [NEW] SQS Queue for heavy batch jobs
+  BatchAnalysisQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: batch-analysis-queue
+      VisibilityTimeout: 300 # More headroom for batch sub-tasks
+      MessageRetentionPeriod: 86400 # 24 hours
+      ReceiveMessageWaitTimeSeconds: 20
+
+  # SQS Queue for background tasks (market scan, blog generation)
+  BackgroundTasksQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: background-tasks-queue
+      VisibilityTimeout: 930  # 15.5 minutes (>= worker timeout)
+      MessageRetentionPeriod: 86400  # 24 hours
+      ReceiveMessageWaitTimeSeconds: 20
+
+  # Worker Lambda for background tasks (market scan, blog generation)
+  BackgroundWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: worker.handler
+      Runtime: python3.13
+      Timeout: 900  # 15 minutes - enough for Deep Search + multiple AI calls
+      MemorySize: 512
+      ReservedConcurrentExecutions: 5
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt BackgroundTasksQueue.Arn
+            BatchSize: 1
+        DailyBlogResearcher:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 7 * * ? *) # Daily at 7 AM UTC
+            Description: "Trigger daily trending topic discovery and research"
+            Enabled: true
+        MarketMoversHourly:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 13-21 * * ? *) # Every hour 9 AM–5 PM ET (US market hours)
+            Description: "Refresh market movers cache every hour during US market hours"
+            Input: '{"action":"REFRESH_MARKET_MOVERS"}'
+            Enabled: true
+        WeeklyCleanup:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 3 ? * SUN *) # Every Sunday at 3 AM UTC
+            Description: "Delete activity_logs > 90 days, stock_analyses > 30 days, expired opportunities"
+            Input: '{"action":"CLEANUP_OLD_DATA"}'
+            Enabled: true
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          FMP_API_KEY: !Ref FmpApiKey
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          GOOGLE_CLOUD_PROJECT: !Ref GoogleCloudProject
+          GCS_BUCKET_NAME: !Ref GcsBucketName
+          SQS_QUEUE_URL: !Ref StockAnalysisQueue
+          BATCH_QUEUE_URL: !Ref BatchAnalysisQueue
+          SQS_BACKGROUND_QUEUE_URL: !Ref BackgroundTasksQueue
+          TWILIO_ACCOUNT_SID: !Ref TwilioAccountSid
+          TWILIO_AUTH_TOKEN: !Ref TwilioAuthToken
+          TWILIO_WHATSAPP_FROM: !Ref TwilioWhatsappFrom
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - AmazonBedrockFullAccess
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BackgroundTasksQueue.QueueName
+
+  # Worker Lambda that processes analysis from SQS
+  StockAnalysisWorker:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: worker.handler
+      Runtime: python3.13
+      Timeout: 180  # 1 minute for rapid failure and retry
+      MemorySize: 512  # More memory for AI processing
+      ReservedConcurrentExecutions: 20 # Reserved PURELY for real-time user requests
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt StockAnalysisQueue.Arn
+            BatchSize: 1
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          FMP_API_KEY: !Ref FmpApiKey
+          XAI_API_KEY: !Ref XaiApiKey
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          KIE_AI: !Ref KieAiApiKey
+          BATCH_PROVIDER: !Ref BatchProvider
+          GOOGLE_CLOUD_PROJECT: !Ref GoogleCloudProject
+          GCS_BUCKET_NAME: !Ref GcsBucketName
+          SQS_QUEUE_URL: !Ref StockAnalysisQueue
+          BATCH_QUEUE_URL: !Ref BatchAnalysisQueue
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - AmazonBedrockFullAccess
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt StockAnalysisQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BatchAnalysisQueue.QueueName
+
+  # [NEW] Worker Lambda that ONLY processes batch-related SQS tasks
+  BatchWorkerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: worker.handler
+      Runtime: python3.13
+      Timeout: 240 # 4 mins for deep batch processing
+      MemorySize: 512
+      ReservedConcurrentExecutions: 50 # Dedicated batch throughput
+      Events:
+        SQSEvent:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt BatchAnalysisQueue.Arn
+            BatchSize: 1
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          FMP_API_KEY: !Ref FmpApiKey
+          XAI_API_KEY: !Ref XaiApiKey
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          KIE_AI: !Ref KieAiApiKey
+          BATCH_PROVIDER: !Ref BatchProvider
+          GOOGLE_CLOUD_PROJECT: !Ref GoogleCloudProject
+          GCS_BUCKET_NAME: !Ref GcsBucketName
+          SQS_QUEUE_URL: !Ref StockAnalysisQueue
+          BATCH_QUEUE_URL: !Ref BatchAnalysisQueue
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - AmazonBedrockFullAccess
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt StockAnalysisQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BatchAnalysisQueue.QueueName
+
+  # Batch Poller Lambda - Checks for completed Google Batch jobs every 5 minutes
+  BatchPollerFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: batch_poller.handler
+      Runtime: python3.13
+      MemorySize: 2048
+      Timeout: 900  # 15 minutes (max allowed)
+      ReservedConcurrentExecutions: 2 # Limits connection usage for poller
+      Events:
+        ScheduleEvent:
+          Type: Schedule
+          Properties:
+            Schedule: rate(5 minutes)
+            Description: "Poll for completed Google Batch prediction jobs"
+            Enabled: true
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          GEMINI_API_KEY: !Ref GeminiApiKey
+          GOOGLE_CLOUD_PROJECT: !Ref GoogleCloudProject
+          GCS_BUCKET_NAME: !Ref GcsBucketName
+          FMP_API_KEY: !Ref FmpApiKey
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+
+  # Daily FMP Screener Cache (fetches beta, volume, marketCap for all stocks)
+  ScreenerCacheFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: screener_cacher.handler
+      Runtime: python3.13
+      Timeout: 300  # 5 min for large API response + DB batch writes
+      MemorySize: 512
+      ReservedConcurrentExecutions: 1 # Strictly one cacher at a time
+      Events:
+        DailySchedule:
+          Type: Schedule
+          Properties:
+            Schedule: cron(0 6 ? * MON-FRI *)
+            Description: "Cache FMP screener data daily at 6 AM UTC (before US market open)"
+            Enabled: true
+      Environment:
+        Variables:
+          DATABASE_URL: !Ref DatabaseUrl
+          FMP_API_KEY: !Ref FmpApiKey
+          SQS_QUEUE_URL: !Ref StockAnalysisQueue
+          BATCH_QUEUE_URL: !Ref BatchAnalysisQueue
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: !Sub 'arn:aws:secretsmanager:${AWS::Region}:${AWS::AccountId}:secret:claritx/gcp-credentials-*'
+        - CloudWatchLambdaInsightsExecutionRolePolicy
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt StockAnalysisQueue.QueueName
+        - SQSSendMessagePolicy:
+            QueueName: !GetAtt BatchAnalysisQueue.QueueName
+
+  # Lambda function to auto-confirm Cognito users (no VPC needed)
+  AutoConfirmFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: ./
+      Handler: cognito_triggers.handler
+      Runtime: python3.13
+      Timeout: 10
+      MemorySize: 128
+      ReservedConcurrentExecutions: 2
+      VpcConfig:
+        SubnetIds: []
+        SecurityGroupIds: []
+
+  # Permission for Cognito to invoke the AutoConfirm Lambda
+  AutoConfirmFunctionPermission:
+    Type: AWS::Lambda::Permission
+    Properties:
+      FunctionName: !Ref AutoConfirmFunction
+      Principal: cognito-idp.amazonaws.com
+      Action: lambda:InvokeFunction
+      SourceArn: !GetAtt ClaritXUserPool.Arn
+
+  # --- Cognito User Pool ---
+  ClaritXUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: claritx-users
+      UsernameAttributes:
+        - email
+      # Disable email verification completely
+      AutoVerifiedAttributes: []
+      # Disable MFA
+      MfaConfiguration: "OFF"
+      # User account immediately confirmed
+      UserAttributeUpdateSettings:
+        AttributesRequireVerificationBeforeUpdate: []
+      # Lambda trigger for auto-confirmation
+      LambdaConfig:
+        PreSignUp: !GetAtt AutoConfirmFunction.Arn
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+
+  # --- Cognito App Client (For React) ---
+  ClaritXUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    DependsOn: GoogleIdentityProvider
+    Properties:
+      ClientName: claritx-frontend
+      UserPoolId: !Ref ClaritXUserPool
+      GenerateSecret: false # React is a public client, so no secret
+      ExplicitAuthFlows:
+        - ALLOW_USER_SRP_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+        - Google
+      AllowedOAuthFlowsUserPoolClient: true
+      AllowedOAuthFlows:
+        - code
+      AllowedOAuthScopes:
+        - email
+        - openid
+        - profile
+      CallbackURLs:
+        - !Sub "${AppUrl}/auth"
+      LogoutURLs:
+        - !Sub "${AppUrl}/auth"
+
+  # --- Cognito User Pool Domain (Required for Hosted UI / OAuth) ---
+  ClaritXUserPoolDomain:
+    Type: AWS::Cognito::UserPoolDomain
+    Properties:
+      UserPoolId: !Ref ClaritXUserPool
+      Domain: !Sub "claritx-${AWS::AccountId}"
+
+  # --- Google Identity Provider ---
+  GoogleIdentityProvider:
+    Type: AWS::Cognito::UserPoolIdentityProvider
+    Properties:
+      UserPoolId: !Ref ClaritXUserPool
+      ProviderName: Google
+      ProviderType: Google
+      ProviderDetails:
+        client_id: !Ref GoogleClientId
+        client_secret: !Ref GoogleClientSecret
+        authorize_scopes: "email profile openid"
+      AttributeMapping:
+        email: email
+        name: name
+
+  # Log Group (Explicit creation allows setting retention policies)
+  StockAnalysisLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub "/aws/lambda/${StockAnalysisFunction}"
+      RetentionInDays: 30
+
+Parameters:
+  DatabaseUrl:
+    Type: String
+    Description: "PostgreSQL Connection String"
+    NoEcho: true
+  AppUrl:
+    Type: String
+    Description: "The base URL of your frontend (e.g. http://localhost:5173 or https://myapp.com)"
+    Default: "http://localhost:5173"
+  GoogleClientId:
+    Type: String
+    Description: "Google OAuth Client ID"
+    Default: "PLACEHOLDER"
+  GoogleClientSecret:
+    Type: String
+    Description: "Google OAuth Client Secret"
+    Default: "PLACEHOLDER"
+    NoEcho: true
+  FmpApiKey:
+    Type: String
+    Description: "Financial Modeling Prep API Key"
+    Default: ""
+    NoEcho: true
+  XaiApiKey:
+    Type: String
+    Description: "xAI (Grok) API Key"
+    NoEcho: true
+    Default: ""
+  GeminiApiKey:
+    Type: String
+    Description: "Google Gemini API Key"
+    NoEcho: true
+    Default: ""
+  KieAiApiKey:
+    Type: String
+    Description: "Kie.ai API Key"
+    NoEcho: true
+    Default: ""
+  BatchProvider:
+    Type: String
+    Description: "Batch Provider (google_batch or kie_direct)"
+    Default: "google_batch"
+  GoogleCloudProject:
+    Type: String
+    Description: "Google Cloud Project ID for Vertex AI"
+    NoEcho: true
+  GcsBucketName:
+    Type: String
+    Description: "Google Cloud Storage Bucket Name for Batch Jobs"
+    NoEcho: true
+    Default: ""
+  StripeSecretKey:
+    Type: String
+    Description: "Stripe API Secret Key"
+    NoEcho: true
+    Default: ""
+  StripeWebhookSecret:
+    Type: String
+    Description: "Stripe Webhook Signing Secret"
+    NoEcho: true
+    Default: ""
+  TwilioAccountSid:
+    Type: String
+    Description: "Twilio Account SID for WhatsApp messaging"
+    NoEcho: true
+    Default: ""
+  TwilioAuthToken:
+    Type: String
+    Description: "Twilio Auth Token for WhatsApp messaging"
+    NoEcho: true
+    Default: ""
+  TwilioWhatsappFrom:
+    Type: String
+    Description: "Twilio WhatsApp sender number (e.g. whatsapp:+14155238886)"
+    Default: ""
+
+Outputs:
+  ApiUrl:
+    Description: "API Gateway endpoint URL for Prod stage"
+    Value: !Sub "https://${ClaritXApi}.execute-api.${AWS::Region}.amazonaws.com/prod/"
+  CognitoUserPoolId:
+    Description: "Cognito User Pool ID"
+    Value: !Ref ClaritXUserPool
+  CognitoClientId:
+    Description: "Cognito Client ID"
+    Value: !Ref ClaritXUserPoolClient
+  CognitoDomain:
+    Description: "Cognito Auth Domain (for OAuth/Hosted UI)"
+    Value: !Sub "claritx-${AWS::AccountId}.auth.${AWS::Region}.amazoncognito.com"
+# Force Stack Update: Sun 01 Feb 2026 21:12:24 IST
+# Force Stack Update (FMP URL Fix): Sun 01 Feb 2026 21:19:33 IST
+# Force Stack Update (Remove Technicals): Sun 01 Feb 2026 21:24:08 IST
+# Force Stack Update (Yahoo Fallback): Sun 01 Feb 2026 21:27:12 IST
+# Force Stack Update (Fix Async Await): Sun 01 Feb 2026 21:30:44 IST
+# Force Stack Update (Fix Model ID): Sun 01 Feb 2026 21:34:46 IST
+# Force Stack Update (Config 4.5 Inference Profile): Sun 01 Feb 2026 21:39:21 IST

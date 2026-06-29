@@ -1,0 +1,38 @@
+# Amplify custom HTTP headers (read from the repo root on deploy).
+#
+# Order matters: Amplify applies all matching patterns; for the same header key
+# the LAST match wins, so the generic '/**' rule comes first and specific
+# overrides follow.
+#
+# The HTML cache fix is load-bearing: the previous edge config cached HTML for
+# up to a year (s-maxage=31536000), so SEO fixes would not go live without a
+# manual invalidation. One hour of CDN cache keeps deploys visible same-day.
+customHeaders:
+  - pattern: '/**'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=0, s-maxage=3600, must-revalidate'
+      - key: 'X-Content-Type-Options'
+        value: 'nosniff'
+      - key: 'Referrer-Policy'
+        value: 'strict-origin-when-cross-origin'
+      - key: 'Strict-Transport-Security'
+        value: 'max-age=31536000; includeSubDomains'
+  # Hashed Vite bundles never change content under the same name
+  - pattern: '/assets/*'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=31536000, immutable'
+  # Static images / favicons — cacheable for a day in browser, a week at the edge
+  - pattern: '/*.png'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400, s-maxage=604800'
+  - pattern: '/*.ico'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400, s-maxage=604800'
+  - pattern: '/*.svg'
+    headers:
+      - key: 'Cache-Control'
+        value: 'public, max-age=86400, s-maxage=604800'

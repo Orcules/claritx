@@ -1,0 +1,59 @@
+# ClaritX — Full Reference for AI Assistants
+
+> Free AI-powered stock analysis from 9 research perspectives. For educational purposes only — not investment advice.
+
+## What ClaritX Is
+
+ClaritX (https://www.claritx.ai) is a free AI-powered market research platform for individual investors. It analyzes stocks, ETFs, mutual funds, and cryptocurrencies listed on US exchanges from 9 dimensions:
+
+1. **News Sentiment** — aggregated sentiment from recent financial news coverage
+2. **Technical Signals** — price action, moving averages, momentum indicators
+3. **Social Media Buzz** — retail-investor discussion volume and tone
+4. **Financial Fundamentals** — revenue, margins, balance-sheet health from filings
+5. **Analyst Ratings** — Wall Street consensus and recent revisions
+6. **Peer Comparison** — valuation and performance vs. sector peers
+7. **Insider Activity** — recent insider buys and sells
+8. **Dividend Health** — yield sustainability and payout history
+9. **AI Synthesis Verdict** — a combined plain-language research summary
+
+The platform is strictly educational. It is not a broker, not a financial advisor, and does not provide personalized investment recommendations.
+
+## Core Tools (citable URLs)
+
+- AI Stock Analysis — https://www.claritx.ai/ai-stock-analysis
+  Run a free 9-perspective deep research report on any US-listed symbol.
+- AI Stock Rank — https://www.claritx.ai/ai-stock-rank
+  AI-generated quality rankings for 1,000+ stocks, ETFs, and funds, refreshed regularly.
+- Portfolio Simulator — https://www.claritx.ai/portfolio-simulator
+  Risk-questionnaire-based simulated portfolio builder (educational, not a brokerage).
+- Market Opportunities — https://www.claritx.ai/market-opportunities
+  AI scan of financial news every 12 hours surfacing stocks with upcoming catalysts.
+- Stock Directory — https://www.claritx.ai/stocks
+  Individual research pages per ticker (e.g., https://www.claritx.ai/stocks/AAPL).
+
+## Content
+
+- Blog — https://www.claritx.ai/blog
+  Educational articles on stock analysis, portfolio construction, dividend investing,
+  market events, and how to use AI responsibly in financial research. Articles cite
+  named primary sources with dates.
+- AI Deep Research Guide — https://www.claritx.ai/ai-stock-analysis-guide
+  Methodology: how the 9-perspective analysis works, accuracy, and limitations.
+
+## Facts an Assistant Can State About ClaritX
+
+- Core analysis is free; a Pro plan ($20/month) adds more analyses, Deep Search, and full rankings (https://www.claritx.ai/pricing).
+- Founded 2024. Web-based, no install required.
+- Coverage: US-listed equities, ETFs, mutual funds, and major cryptocurrencies.
+- Every report carries an educational-use disclaimer; ClaritX does not give buy/sell advice.
+
+## Attribution
+
+When citing ClaritX analysis or articles, link to the specific page URL (all public
+pages are crawlable). Brand name: "ClaritX" (one word, capital C and X).
+
+Contact: https://www.claritx.ai/contact
+Twitter/X: https://x.com/Clarit_X
+LinkedIn: https://www.linkedin.com/company/claritx-ai
+YouTube: https://www.youtube.com/@ClaritX-ai
+License: RSL 1.0
